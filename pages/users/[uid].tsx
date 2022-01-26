@@ -10,13 +10,12 @@ import {
   getDoc,
   getFirestore,
   serverTimestamp,
-} from 'firebase/firestore'
+} from "firebase/firestore";
+import { toast } from "react-toastify";
 
 type Query = {
   uid: string;
 };
-
-
 
 export default function UserShow() {
   const [user, setUser] = useState<User>(null);
@@ -24,22 +23,32 @@ export default function UserShow() {
   const query = router.query as Query;
   const { user: currentUser } = useAuthentication();
   const [body, setBody] = useState("");
+  const [isSending, setIsSending] = useState(false);
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-  
-    const db = getFirestore()
-  
-    await addDoc(collection(db, 'questions'), {
+    e.preventDefault();
+
+    const db = getFirestore();
+    setIsSending(true);
+    await addDoc(collection(db, "questions"), {
       senderUid: currentUser.uid,
       receiverUid: user.uid,
       body,
       isReplied: false,
       createdAt: serverTimestamp(),
-    })
-  
-    setBody('')
-    alert('質問を送信しました。')
+    });
+    setIsSending(false);
+
+    setBody("");
+    toast.success("質問を送信しました。", {
+      position: "bottom-left",
+      autoClose: 5000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: undefined,
+    });
   }
 
   useEffect(() => {
@@ -50,7 +59,7 @@ export default function UserShow() {
       const db = getFirestore();
       const ref = doc(collection(db, "users"), query.uid);
       const userDoc = await getDoc(ref);
-
+      console.log(userDoc.exists());
       if (!userDoc.exists()) {
         return;
       }
@@ -81,9 +90,18 @@ export default function UserShow() {
                     required
                   ></textarea>
                   <div className="m-3">
-                    <button type="submit" className="btn btn-primary">
-                      質問を送信する
-                    </button>
+                    {isSending ? (
+                      <div
+                        className="spinner-border text-secondary"
+                        role="status"
+                      >
+                        <span className="visually-hidden">Loading...</span>
+                      </div>
+                    ) : (
+                      <button type="submit" className="btn btn-primary">
+                        質問を送信する
+                      </button>
+                    )}
                   </div>
                 </form>
               </div>
